@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BBS Random Bit Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(120deg, #8ec5fc, #e0c3fc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+    h1 { color: #333; text-align: center; }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      width: 400px;
+      margin-top: 20px;
+    }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      background-color: #6a5acd;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #483d8b; }
+    pre {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 6px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <h2>Blum Blum Shub (BBS) Generator: Implement the BBS pseudo-random bit 
+generator. The program should take two large prime numbers (p,q) as input and 
+generate a sequence of secure random bits.</h2>
+  <form id="bbsForm">
+    <label>Prime p:</label>
+    <input type="number" id="p" placeholder="Enter large prime p" required />
+
+    <label>Prime q:</label>
+    <input type="number" id="q" placeholder="Enter large prime q" required />
+
+    <label>Seed (integer):</label>
+    <input type="number" id="seed" placeholder="Enter seed" required />
+
+    <label>Length (bits to generate):</label>
+    <input type="number" id="length" placeholder="e.g. 100" required />
+
+    <button type="submit">Generate Random Bits</button>
+  </form>
+
+  <div id="output" style="margin-top:20px;">
+    <h3>Generated Bits:</h3>
+    <pre id="bitsDisplay"></pre>
+  </div>
+
+  <script>
+    // ✅ Helper function to check if a number is prime
+    function isPrime(num) {
+      if (num <= 1) return false;
+      if (num <= 3) return true;
+      if (num % 2 === 0 || num % 3 === 0) return false;
+      for (let i = 5; i * i <= num; i += 6) {
+        if (num % i === 0 || num % (i + 2) === 0) return false;
+      }
+      return true;
+    }
+
+    const form = document.getElementById("bbsForm");
+    const bitsDisplay = document.getElementById("bitsDisplay");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      bitsDisplay.textContent = "Generating bits...";
+
+      const p = parseInt(document.getElementById("p").value);
+      const q = parseInt(document.getElementById("q").value);
+      const seed = parseInt(document.getElementById("seed").value);
+      const length = parseInt(document.getElementById("length").value);
+
+      // ✅ Validation checks
+      if (!isPrime(p) || !isPrime(q)) {
+        alert("❌ Both p and q must be prime numbers.");
+        bitsDisplay.textContent = "Invalid input: p and q are not primes.";
+        return;
+      }
+
+      if (p % 4 !== 3 || q % 4 !== 3) {
+        alert("❌ Invalid input! Both p and q must be congruent to 3 mod 4.");
+        bitsDisplay.textContent = "Invalid primes provided. Try again!";
+        return;
+      }
+
+      try {
+        // Send data to backend
+        const res = await fetch("http://localhost:4000/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ p, q, seed, length }),
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          bitsDisplay.textContent = "❌ " + data.error;
+        } else {
+          bitsDisplay.textContent = data.bits;
+        }
+      } catch (err) {
+        bitsDisplay.textContent = "⚠️ Failed to connect to backend.";
+      }
+    });
+  </script>
+</body>
+</html>
